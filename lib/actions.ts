@@ -31,29 +31,16 @@ export async function createNote(payload: NotePayload): Promise<State> {
     };
   }
 
-  const tagsToInsert = validatedFields.data.tags?.map((tagName) => ({
-          name: tagName,
-        })) || [];
-
-  await prisma.tag.createMany({
-    data: tagsToInsert,
-    skipDuplicates: true,
-  });
-
-  const tagsNote = await prisma.tag.findMany({
-    where: {
-      name: {
-        in: validatedFields.data.tags
-      },
-    }})
-
   await prisma.note.create({
     data: {
       title: validatedFields.data.title,
-      content: validatedFields.data.content,   
+      content: validatedFields.data.content,
       tags: {
-        connect: tagsNote.map((tag) => ({ id: tag.id })),
-      },    
+        connectOrCreate: validatedFields.data.tags?.map((tagName) => ({
+          where: { name: tagName },
+          create: { name: tagName },
+        })) ?? [],
+      },
     },
   });
 
