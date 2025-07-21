@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { createNote, type NotePayload } from "@/lib/actions";
 import {
   Card,
@@ -13,11 +13,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { TagInput } from "@/components/ui/tags";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 
 export function CreateNoteForm() {
   const queryClient = useQueryClient();
   const formRef = useRef<HTMLFormElement>(null);
+  const [tags, setTags] = useState<string[]>([]);
 
   const {
     mutate,
@@ -28,24 +30,17 @@ export function CreateNoteForm() {
     onSuccess: (data) => {
       if (data.message) {
         formRef.current?.reset();
+        setTags([]);
         queryClient.invalidateQueries({ queryKey: ["notes"] });
       }
     },
   });
 
   const formAction = (formData: FormData) => {
-    const getTags = (formData: FormData) => {
-      const tags = formData.get("tags") as string;
-      if (tags) {
-        return tags.split(",").map((tag) => tag.trim());
-      }
-      return [];
-    };
-
     const payload: NotePayload = {
       title: formData.get("title") as string,
       content: formData.get("content") as string,
-      tags: getTags(formData),
+      tags: tags,
     };
     mutate(payload);
   };
@@ -77,12 +72,11 @@ export function CreateNoteForm() {
             )}
           </div>
           <div className="grid w-full max-w-sm items-center gap-1.5">
-            <Label htmlFor="title">Tags</Label>
-            <Input
-              type="text"
-              id="tags"
-              name="tags"
-              placeholder="Enter you tags"
+            <Label htmlFor="tags">Tags</Label>
+            <TagInput
+              value={tags}
+              onChange={setTags}
+              placeholder="Enter your tags..."
             />
             {state?.errors?.tags && (
               <div className="text-red-500 text-sm mt-1">
